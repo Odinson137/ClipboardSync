@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipboardSync.Server", "ClipboardSync.Server\ClipboardSync.Server.csproj", "{ABD2199A-1D99-4830-B967-50610FF50422}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ABD2199A-1D99-4830-B967-50610FF50422}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABD2199A-1D99-4830-B967-50610FF50422}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABD2199A-1D99-4830-B967-50610FF50422}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABD2199A-1D99-4830-B967-50610FF50422}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
