@@ -8,25 +8,24 @@
     "net9.0": []
   },
   "packageFolders": {
-    "/home/yuri/.nuget/packages/": {}
+    "C:\\Users\\buryy\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/yuri/ClipboardSync/src/ClipboardSync.Server/ClipboardSync.Server/ClipboardSync.Server.csproj",
+      "projectUniqueName": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\ClipboardSync.Server.csproj",
       "projectName": "ClipboardSync.Server",
-      "projectPath": "/home/yuri/ClipboardSync/src/ClipboardSync.Server/ClipboardSync.Server/ClipboardSync.Server.csproj",
-      "packagesPath": "/home/yuri/.nuget/packages/",
-      "outputPath": "/home/yuri/ClipboardSync/src/ClipboardSync.Server/ClipboardSync.Server/obj/",
+      "projectPath": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\ClipboardSync.Server.csproj",
+      "packagesPath": "C:\\Users\\buryy\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/yuri/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\buryy\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -45,7 +44,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.100"
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net9.0": {
@@ -69,7 +68,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.107/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ClipboardSync.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7aa0d8c5f719bca06ec3b107e2ce518abf03c341")]
 [assembly: System.Reflection.AssemblyProductAttribute("ClipboardSync.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ClipboardSync.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

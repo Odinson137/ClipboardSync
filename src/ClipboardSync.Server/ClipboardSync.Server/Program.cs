@@ -27,11 +27,9 @@ public class ClipboardHub : Hub
 {
     private static readonly Dictionary<string, string> Users = new();
 
-    // Метод для авторизации пользователя
     public async Task Authenticate(string username, string password)
     {
-        // Простая проверка (замените на реальную авторизацию, например, с базы данных)
-        if (password == "secret") // Замените на безопасный механизм
+        if (password == "secret") 
         {
             Users[Context.ConnectionId] = username;
             await Clients.Caller.SendAsync("AuthSuccess", $"Welcome, {username}!");
@@ -42,7 +40,6 @@ public class ClipboardHub : Hub
         }
     }
 
-    // Метод для получения данных из буфера обмена
     public async Task SendClipboard(string userId, string text)
     {
         if (Users.ContainsKey(Context.ConnectionId))
@@ -56,7 +53,6 @@ public class ClipboardHub : Hub
         }
     }
 
-    // Метод для включения точки доступа
     public async Task EnableHotspot(string userId)
     {
         if (Users.ContainsKey(Context.ConnectionId))
@@ -70,7 +66,6 @@ public class ClipboardHub : Hub
         }
     }
 
-    // Метод для отключения точки доступа
     public async Task DisableHotspot(string userId)
     {
         if (Users.ContainsKey(Context.ConnectionId))
@@ -84,7 +79,6 @@ public class ClipboardHub : Hub
         }
     }
 
-    // Отключение пользователя
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         if (Users.ContainsKey(Context.ConnectionId))
