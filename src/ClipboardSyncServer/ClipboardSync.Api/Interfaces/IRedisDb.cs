@@ -1,4 +1,4 @@
-﻿namespace ClipboardSync.Server.Interfaces;
+﻿namespace ClipboardSync.Api.Interfaces;
 
 public interface IRedisDb
 {

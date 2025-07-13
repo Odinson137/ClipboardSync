@@ -1,4 +1,4 @@
-﻿namespace ClipboardSync.Server.Data.Enums;
+﻿namespace ClipboardSync.Api.Data.Enums;
 
 public enum ConnectionState
 {

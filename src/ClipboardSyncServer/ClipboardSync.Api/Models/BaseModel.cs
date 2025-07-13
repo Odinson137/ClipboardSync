@@ -1,4 +1,4 @@
-﻿namespace ClipboardSync.Server.Models;
+﻿namespace ClipboardSync.Api.Models;
 
 public abstract class BaseModel
 {

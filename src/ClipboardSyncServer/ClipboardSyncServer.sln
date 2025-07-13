@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipboardSync.Server", "ClipboardSync.Server\ClipboardSync.Server.csproj", "{ABD2199A-1D99-4830-B967-50610FF50422}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipboardSync.Api", "ClipboardSync.Api\ClipboardSync.Api.csproj", "{ABD2199A-1D99-4830-B967-50610FF50422}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
