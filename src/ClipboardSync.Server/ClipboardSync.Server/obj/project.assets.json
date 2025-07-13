@@ -8,24 +8,25 @@
     "net9.0": []
   },
   "packageFolders": {
-    "C:\\Users\\buryy\\.nuget\\packages\\": {}
+    "/home/yuri/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\ClipboardSync.Server.csproj",
+      "projectUniqueName": "/home/yuri/RiderProjects/ClipboardSync/src/Server/ClipboardSync.Server/ClipboardSync.Server/ClipboardSync.Server.csproj",
       "projectName": "ClipboardSync.Server",
-      "projectPath": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\ClipboardSync.Server.csproj",
-      "packagesPath": "C:\\Users\\buryy\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\buryy\\RiderProjects\\ClipboardSync\\src\\ClipboardSync.Server\\ClipboardSync.Server\\obj\\",
+      "projectPath": "/home/yuri/RiderProjects/ClipboardSync/src/Server/ClipboardSync.Server/ClipboardSync.Server/ClipboardSync.Server.csproj",
+      "packagesPath": "/home/yuri/.nuget/packages/",
+      "outputPath": "/home/yuri/RiderProjects/ClipboardSync/src/Server/ClipboardSync.Server/ClipboardSync.Server/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\buryy\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "/home/yuri/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "/usr/lib/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -44,7 +45,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net9.0": {
@@ -68,7 +69,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.107/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
