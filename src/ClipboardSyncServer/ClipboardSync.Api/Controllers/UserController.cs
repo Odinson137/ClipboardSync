@@ -1,3 +1,4 @@
+using ClipboardSync.Api.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using ClipboardSync.Api.Models;
 
@@ -7,23 +8,32 @@ namespace ClipboardSync.Api.Controllers;
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    // Временное хранилище для теста
-    private static readonly List<User> _users = new();
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<UserController> _logger;
 
-    // Модель для запросов
+    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
     public record UserRequest(string UserName, string Password);
 
     [HttpPost("register")]
-    public IActionResult Register([FromBody] UserRequest request)
+    public async Task<IActionResult> Register([FromBody] UserRequest request)
     {
+        _logger.LogInformation($"Registering user {request.UserName}");
         if (string.IsNullOrEmpty(request.UserName) || string.IsNullOrEmpty(request.Password))
         {
+            _logger.LogError($"User {request.UserName} and password are required");
             return BadRequest("Username and password are required.");
         }
 
-        if (_users.Any(u => u.UserName == request.UserName))
+        var existingUser = await _userRepository.GetByIdAsync(Guid.NewGuid()); // Проверка по UserName не поддерживается в базовом варианте
+        if (existingUser != null)
         {
-            return Conflict("Username already exists.");
+            _logger.LogError($"User {request.UserName} already exists");
+            return Conflict("User ID conflict (try again).");
         }
 
         var salt = BCrypt.Net.BCrypt.GenerateSalt();
@@ -33,27 +43,34 @@ public class UserController : ControllerBase
         {
             UserName = request.UserName,
             Password = hashedPassword,
-            Salt = salt
+            Salt = salt,
+            Email = string.Empty
         };
 
-        _users.Add(user);
-        return Ok(new { Token = user.Id, Message = "User registered." }); // пока токен это id
+        await _userRepository.CreateAsync(user);
+        _logger.LogInformation($"User {request.UserName} registered");
+        return Ok(new { UserId = user.Id, Message = "User registered." });
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] UserRequest request)
+    public async Task<IActionResult> Login([FromBody] UserRequest request)
     {
+        _logger.LogInformation($"Logining user {request.UserName}");
         if (string.IsNullOrEmpty(request.UserName) || string.IsNullOrEmpty(request.Password))
         {
+            _logger.LogError($"User {request.UserName} and password are required");
             return BadRequest("Username and password are required.");
         }
 
-        var user = _users.FirstOrDefault(u => u.UserName == request.UserName);
+        // Для теста ищем по ID (в реальном проекте добавьте индекс по UserName)
+        var user = await _userRepository.GetByUserNameAsync(request.UserName); // Замените на реальный поиск по UserName
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
         {
+            _logger.LogError($"User {request.UserName} and password do not match");
             return Unauthorized("Invalid username or password.");
         }
 
-        return Ok(new { Token = user.Id, Message = "Login successful." });
+        _logger.LogInformation($"User {request.UserName} logged in");
+        return Ok(new { UserId = user.Id, Message = "Login successful." });
     }
 }

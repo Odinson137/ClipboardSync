@@ -1,9 +1,20 @@
+using ClipboardSync.Api.Hubs;
+using ClipboardSync.Api.Interfaces;
+using ClipboardSync.Api.Repositories;
 using Microsoft.AspNetCore.SignalR;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var services = builder.Services;
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!));
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddSingleton<IClipboardRepository, ClipboardRepository>();
+builder.Services.AddSingleton<ICommandRepository, CommandRepository>();
+
 services.AddSignalR();
 services.AddCors(options =>
 {
@@ -15,76 +26,25 @@ services.AddCors(options =>
     });
 });
 
+services.AddSignalR().AddStackExchangeRedis(builder.Configuration["Redis:ConnectionString"]!, options =>
+{
+    options.Configuration.ChannelPrefix = new RedisChannel("ClipboardSync", RedisChannel.PatternMode.Auto);
+});
+
+services.AddControllers();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseCors("AllowAll");
-app.MapHub<ClipboardHub>("/clipboardHub");
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHub<ClipboardSyncHub>("/hub/clipboardsync");
+
+app.MapGet("/", () => "Main api page!");
+
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();
-
-public class ClipboardHub : Hub
-{
-    private static readonly Dictionary<string, string> Users = new();
-
-    public async Task Authenticate(string username, string password)
-    {
-        if (password == "secret") 
-        {
-            Users[Context.ConnectionId] = username;
-            await Clients.Caller.SendAsync("AuthSuccess", $"Welcome, {username}!");
-        }
-        else
-        {
-            await Clients.Caller.SendAsync("AuthFailed", "Invalid credentials.");
-        }
-    }
-
-    public async Task SendClipboard(string userId, string text)
-    {
-        if (Users.ContainsKey(Context.ConnectionId))
-        {
-            await Clients.AllExcept(Context.ConnectionId).SendAsync("ReceiveClipboard", text);
-            await Clients.Caller.SendAsync("ClipboardSent", "Clipboard data sent successfully.");
-        }
-        else
-        {
-            await Clients.Caller.SendAsync("Unauthorized", "Please authenticate first.");
-        }
-    }
-
-    public async Task EnableHotspot(string userId)
-    {
-        if (Users.ContainsKey(Context.ConnectionId))
-        {
-            await Clients.Caller.SendAsync("HotspotCommand", "enable");
-            await Clients.Caller.SendAsync("HotspotResponse", "Hotspot enable command sent.");
-        }
-        else
-        {
-            await Clients.Caller.SendAsync("Unauthorized", "Please authenticate first.");
-        }
-    }
-
-    public async Task DisableHotspot(string userId)
-    {
-        if (Users.ContainsKey(Context.ConnectionId))
-        {
-            await Clients.Caller.SendAsync("HotspotCommand", "disable");
-            await Clients.Caller.SendAsync("HotspotResponse", "Hotspot disable command sent.");
-        }
-        else
-        {
-            await Clients.Caller.SendAsync("Unauthorized", "Please authenticate first.");
-        }
-    }
-
-    public override Task OnDisconnectedAsync(Exception? exception)
-    {
-        if (Users.ContainsKey(Context.ConnectionId))
-        {
-            Users.Remove(Context.ConnectionId);
-        }
-        return base.OnDisconnectedAsync(exception);
-    }
-}

@@ -1,0 +1,14 @@
+﻿services:
+  clipboardsync.api:
+    image: clipboardsync.api
+    build:
+      context: .
+      dockerfile: ClipboardSync.Api/Dockerfile
+    ports:
+      - 8080:8080
+
+  redis:
+    container_name: clipboardsync-redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
