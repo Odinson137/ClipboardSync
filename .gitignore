@@ -77,3 +77,4 @@ yarn-error.log
 obj/
 bin/
 /src/ClipboardSyncDesktop/ClipboardSync-linux-x64/
+/src/ClipboardSyncDesktop/dist/

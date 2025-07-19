@@ -7,16 +7,18 @@
 <body>
 <div id="auth-section">
     <h2>ClipboardSync</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="register()">Register</button>
-    <button onclick="login()">Login</button>
+    <input type="text" id="username" placeholder="Имя пользователя" value="Yuri">
+    <input type="password" id="password" placeholder="Пароль" value="Yuri">
+    <button id="registerButton">Регистрация</button>
+    <button id="loginButton">Вход</button>
 </div>
 <div id="main-section" style="display: none;">
-    <h2>Welcome, <span id="user-name"></span></h2>
-    <p>Status: <span id="connection-status">Disconnected</span></p>
-    <p>Device ID: <span id="device-id"></span></p>
-    <button onclick="sendDevice()">Send Device</button>
+    <h2>Добро пожаловать, <span id="user-name"></span></h2>
+    <p>Статус: <span id="connection-status">Отключено</span></p>
+    <p>ID устройства: <span id="device-id"></span></p>
+    <button id="sendDeviceButton">Отправить устройство</button>
+    <input type="text" id="clipboard-input" placeholder="Введите текст для копирования">
+    <button id="copyButton">Скопировать в буфер</button>
 </div>
 <div id="error" style="color: red;"></div>
 <script src="app.js"></script>

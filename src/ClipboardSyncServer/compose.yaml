@@ -6,9 +6,34 @@
       dockerfile: ClipboardSync.Api/Dockerfile
     ports:
       - 8080:8080
-
+    networks:
+      - clipboardsync-network
+      
   redis:
     container_name: clipboardsync-redis
     image: redis:latest
     ports:
       - "6379:6379"
+    networks:
+      - clipboardsync-network
+      
+  ngrok:
+    image: ngrok/ngrok:latest
+    command:
+      - "http"
+      - "--url=probable-dogfish-known.ngrok-free.app"
+      - "clipboardsync.api:8080"
+    environment:
+      - NGROK_AUTHTOKEN=3055WP7065mrJ8lzPXzzEzK9TaR_4EZ3RCkkF3a1nzzM7zfPo
+    ports:
+      - 4040:4040
+    depends_on:
+      - clipboardsync.api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - clipboardsync-network
+    
+networks:
+  clipboardsync-network:
+    driver: bridge

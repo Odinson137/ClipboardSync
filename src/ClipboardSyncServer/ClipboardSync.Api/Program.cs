@@ -45,6 +45,4 @@ app.MapHub<ClipboardSyncHub>("/hub/clipboardsync");
 
 app.MapGet("/", () => "Main api page!");
 
-app.Urls.Add("http://0.0.0.0:8080");
-
 app.Run();

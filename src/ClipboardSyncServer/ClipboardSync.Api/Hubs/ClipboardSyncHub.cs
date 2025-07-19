@@ -60,8 +60,7 @@ public class ClipboardSyncHub : Hub
         {
             UserId = userId,
             Content = content,
-            Type = type,
-            CreatedAt = DateTime.UtcNow
+            Type = type
         };
         await _clipboardRepository.CreateAsync(clipboard);
 
