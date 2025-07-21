@@ -1,3 +1,4 @@
+const { ipcRenderer } = require('electron');
 const store = require('./storage');
 const { connectSignalR, sendDevice, copyToClipboard } = require('./signalr');
 const { register, login } = require('./api');
@@ -38,7 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('password').value,
             store,
             connectSignalR
-        );
+        ).then(success => {
+            if (success) {
+                ipcRenderer.send('minimize-to-tray');
+            }
+        });
     });
 
     sendDeviceButton.addEventListener('click', () => {
@@ -52,5 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             store.get('userId'),
             document.getElementById('clipboard-input').value
         );
+    });
+
+    // Обработка закрытия окна буфера
+    ipcRenderer.on('close-clipboard-window', () => {
+        ipcRenderer.send('focus-main-window');
     });
 });

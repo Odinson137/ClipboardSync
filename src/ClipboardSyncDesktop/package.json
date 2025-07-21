@@ -20,10 +20,10 @@
     "@microsoft/signalr": "^8.0.7",
     "axios": "^1.10.0",
     "electron-store": "^8.1.0",
+    "electron": "^37.2.2",
     "node-wifi": "^2.0.16"
   },
   "devDependencies": {
-    "electron": "^37.2.2",
     "electron-packager": "^17.1.2"
   }
 }

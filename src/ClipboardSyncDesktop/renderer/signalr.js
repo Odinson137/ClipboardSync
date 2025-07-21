@@ -1,5 +1,5 @@
 const signalR = require('@microsoft/signalr');
-const { clipboard } = require('electron');
+const { clipboard, ipcRenderer } = require('electron');
 
 let connection;
 
@@ -37,6 +37,7 @@ function connectSignalR(userId, token) {
         if (type === 'text') {
             clipboard.writeText(content);
             showError('Получен контент буфера обмена: ' + content);
+            ipcRenderer.send('update-clipboard', content); // Обновляем окно буфера
         }
     });
 
@@ -72,6 +73,7 @@ async function copyToClipboard(userId, text) {
         clipboard.writeText(text);
         await connection.invoke('SendClipboard', userId, text, 0);
         showError('Текст скопирован в буфер обмена и отправлен на сервер');
+        ipcRenderer.send('update-clipboard', text); // Обновляем окно буфера
     } catch (error) {
         showError('Ошибка копирования или отправки: ' + error.message);
     }
