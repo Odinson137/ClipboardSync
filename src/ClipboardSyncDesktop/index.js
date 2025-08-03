@@ -58,8 +58,7 @@ function saveClipboardHistory(text) {
         }
         fs.writeFileSync(historyPath, JSON.stringify(history.slice(0, 100), null, 2));
         console.log('История сохранена:', text);
-        clipboard.writeText(text);
-        console.log('Текст скопирован в буфер:', text);
+        clipboard.writeText(text); // Обновляем буфер, чтобы сохранить текущее состояние
     } catch (error) {
         console.error('Ошибка сохранения истории:', error.message);
     }
@@ -105,7 +104,6 @@ function createMainWindow() {
     });
     mainWindow.loadFile('renderer/index.html');
 
-    // Автоавторизация выполняется в рендер-процессе при загрузке
     mainWindow.on('close', (event) => {
         if (mainWindow && !app.isQuitting) {
             event.preventDefault();
@@ -123,7 +121,7 @@ function createMainWindow() {
 // Создание окна буфера обмена
 function createClipboardWindow() {
     console.log("Create clipboard window");
-    const token = isAuthenticated().token; // Используем существующий токен
+    const token = isAuthenticated().token;
     if (!token) {
         console.log('Токен отсутствует, открытие главного окна');
         new Notification({
@@ -181,17 +179,28 @@ function updateClipboardContent(token) {
     if (clipboardWindow) {
         const text = clipboard.readText();
         const userData = isAuthenticated();
-        if (text && userData && userData.token) {
-            const history = readClipboardHistory();
-            const existingIndex = history.findIndex(item => item.text === text);
-            if (existingIndex === -1) {
-                sendToServer(userData.token, text);
-            }
-            saveClipboardHistory(text);
-        }
         const history = readClipboardHistory();
         clipboardWindow.webContents.send('update-clipboard', { current: text, history });
     }
+}
+
+// Мониторинг изменений буфера обмена
+function monitorClipboard() {
+    let lastText = clipboard.readText();
+    setInterval(() => {
+        const currentText = clipboard.readText();
+        if (currentText !== lastText && currentText.trim() !== '') {
+            lastText = currentText;
+            const userData = isAuthenticated();
+            if (userData && userData.token) {
+                saveClipboardHistory(currentText);
+                sendToServer(userData.token, currentText);
+            }
+            if (clipboardWindow) {
+                updateClipboardContent(userData.token);
+            }
+        }
+    }, 500); // Проверяем каждые 500 мс
 }
 
 // Создание трея
@@ -228,14 +237,11 @@ if (!gotTheLock) {
     app.whenReady().then(() => {
         createMainWindow();
         createTray();
+        monitorClipboard(); // Запускаем мониторинг буфера обмена
 
         if (process.argv.includes('--show-clipboard')) {
             createClipboardWindow();
         }
-
-        setInterval(() => {
-            updateClipboardContent(isAuthenticated().token);
-        }, 1000);
     });
 }
 
