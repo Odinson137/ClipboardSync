@@ -1,60 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>ClipboardSync - Буфер обмена</title>
-    <link rel="stylesheet" href="clipboard.css">
+    <meta charset="UTF-8" />
+    <title>ClipboardSync</title>
+    <link rel="stylesheet" href="./clipboard.css" />
 </head>
 <body>
-<div class="container">
-    <h3>Буфер обмена</h3>
-    <ul id="clipboard-list">
-        <li tabindex="0" data-type="current"></li>
-        <li tabindex="0" data-type="history">Элемент 1</li>
-        <li tabindex="0" data-type="history">Элемент 2</li>
-    </ul>
+<div id="header">
+    <button id="clear-button">Очистить всё</button>
 </div>
-<script>
-    const { ipcRenderer, clipboard } = require('electron');
 
-    // Обновление текущего значения буфера
-    ipcRenderer.on('update-clipboard', (event, text) => {
-        const currentItem = document.querySelector('#clipboard-list li[data-type="current"]');
-        currentItem.innerText = text || 'Пусто';
-    });
+<div id="scroll-container">
+    <ul id="clipboard-list"></ul>
+</div>
 
-    // Навигация и обработка Enter
-    const listItems = document.querySelectorAll('#clipboard-list li');
-    let currentIndex = 0;
-
-    if (listItems.length > 0) {
-        listItems[0].focus();
-    }
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            if (currentIndex < listItems.length - 1) {
-                currentIndex++;
-                listItems[currentIndex].focus();
-            }
-        } else if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            if (currentIndex > 0) {
-                currentIndex--;
-                listItems[currentIndex].focus();
-            }
-        } else if (event.key === 'Enter') {
-            event.preventDefault();
-            const selectedItem = listItems[currentIndex];
-            if (selectedItem) {
-                const text = selectedItem.dataset.type === 'current' ? clipboard.readText() : selectedItem.innerText;
-                console.log('Выбранный текст для вставки:', text);
-                ipcRenderer.send('paste-clipboard', text);
-            }
-        } else if (event.key === 'Escape') {
-            ipcRenderer.send('close-clipboard-window');
-        }
-    });
-</script>
 </body>
 </html>
+
+<script src="./clipboard.js"></script>

@@ -1,26 +1,29 @@
 const { app, BrowserWindow, Tray, Menu, clipboard, Notification, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
-const util = require('util');
 const os = require('os');
-
-const execPromise = util.promisify(exec);
+const axios = require('axios');
 
 let mainWindow = null;
 let tray = null;
 let clipboardWindow = null;
-let lastActiveWindowId = null;
 
 app.disableHardwareAcceleration();
 
+// Путь к файлам хранения
+const storagePath = path.join(os.homedir(), '.config', 'ClipboardSync', 'storage.json');
+const historyPath = path.join(os.homedir(), '.config', 'ClipboardSync', 'clipboard_history.json');
+
+// URL сервера
+const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
+
+// Проверка авторизации
 function isAuthenticated() {
-    let storagePath = path.join(os.homedir(), '.config', 'ClipboardSync', 'storage.json');
     try {
         if (fs.existsSync(storagePath)) {
             const data = JSON.parse(fs.readFileSync(storagePath, 'utf-8'));
             console.log('storage.json:', data);
-            return data.userId;
+            return data.token ? data : false;
         }
         return false;
     } catch (error) {
@@ -29,69 +32,68 @@ function isAuthenticated() {
     }
 }
 
-async function getActiveWindowId() {
+// Чтение истории копирований
+function readClipboardHistory() {
     try {
-        const { stdout } = await execPromise('xdotool getactivewindow');
-        return stdout.trim();
-    } catch (error) {
-        console.error('Ошибка получения активного окна:', error.message);
-        return null;
-    }
-}
-
-async function getCurrentLayout() {
-    try {
-        const { stdout } = await execPromise('setxkbmap -query | grep layout | awk \'{print $2}\'');
-        return stdout.trim();
-    } catch (error) {
-        console.error('Ошибка получения текущей раскладки:', error.message);
-        return 'us';
-    }
-}
-
-async function setKeyboardLayout(layout) {
-    try {
-        await execPromise(`setxkbmap ${layout}`);
-        console.log(`Установлена раскладка: ${layout}`);
-    } catch (error) {
-        console.error(`Ошибка установки раскладки ${layout}:`, error.message);
-    }
-}
-
-async function pasteText(windowId, text) {
-    if (!windowId) {
-        console.error('ID окна не определён, вставка невозможна');
-        return;
-    }
-    try {
-        const escapedText = text
-            .replace(/([\\"$`])/g, '\\$1')
-            .replace(/\n/g, '\\n')
-            .replace(/'/g, '\\\'');
-        const originalLayout = await getCurrentLayout();
-        console.log(`Текущая раскладка: ${originalLayout}`);
-        await setKeyboardLayout('ru');
-        await execPromise(`xdotool windowactivate --sync ${windowId}`);
-        console.log(`Активировано окно с ID: ${windowId}`);
-        try {
-            await execPromise(`xdotool type --delay 50 "${escapedText}"`);
-            console.log(`Вставлен текст через xdotool type: ${text}`);
-        } catch (typeError) {
-            console.error('Ошибка xdotool type:', typeError.message);
-            await execPromise(`echo "${escapedText}" | xclip -selection clipboard`);
-            console.log(`Текст скопирован в буфер через xclip: ${text}`);
-            await execPromise(`xdotool key --delay 50 ctrl+v`);
-            console.log(`Эмулирован Ctrl + V`);
+        if (fs.existsSync(historyPath)) {
+            return JSON.parse(fs.readFileSync(historyPath, 'utf-8'));
         }
-        if (originalLayout !== 'ru') {
-            await setKeyboardLayout(originalLayout);
-            console.log(`Восстановлена раскладка: ${originalLayout}`);
+        return [];
+    } catch (error) {
+        console.error('Ошибка чтения истории:', error.message);
+        return [];
+    }
+}
+
+// Сохранение истории копирований
+function saveClipboardHistory(text) {
+    try {
+        let history = readClipboardHistory();
+        const existingIndex = history.findIndex(item => item.text === text);
+        if (existingIndex !== -1) {
+            history.splice(existingIndex, 1);
+            history.unshift({ text, timestamp: new Date().toISOString() });
+        } else {
+            history.unshift({ text, timestamp: new Date().toISOString() });
+        }
+        fs.writeFileSync(historyPath, JSON.stringify(history.slice(0, 100), null, 2));
+        console.log('История сохранена:', text);
+        clipboard.writeText(text);
+        console.log('Текст скопирован в буфер:', text);
+    } catch (error) {
+        console.error('Ошибка сохранения истории:', error.message);
+    }
+}
+
+// Очистка истории
+function clearClipboardHistory() {
+    try {
+        fs.writeFileSync(historyPath, JSON.stringify([], null, 2));
+        console.log('История очищена');
+        if (clipboardWindow) {
+            updateClipboardContent();
         }
     } catch (error) {
-        console.error('Ошибка вставки текста:', error.message);
+        console.error('Ошибка очистки истории:', error.message);
     }
 }
 
+// Отправка текста на сервер
+async function sendToServer(token, text) {
+    try {
+        const response = await axios.post(`${serverUrl}/api/clipboard`, {
+            content: text,
+            type: 'text'
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Текст отправлен на сервер:', response.data);
+    } catch (error) {
+        console.error('Ошибка отправки на сервер:', error.message);
+    }
+}
+
+// Создание главного окна
 function createMainWindow() {
     mainWindow = new BrowserWindow({
         width: 800,
@@ -103,6 +105,7 @@ function createMainWindow() {
     });
     mainWindow.loadFile('renderer/index.html');
 
+    // Автоавторизация выполняется в рендер-процессе при загрузке
     mainWindow.on('close', (event) => {
         if (mainWindow && !app.isQuitting) {
             event.preventDefault();
@@ -117,9 +120,12 @@ function createMainWindow() {
     return mainWindow;
 }
 
-async function createClipboardWindow() {
-    if (!isAuthenticated()) {
-        console.log('Пользователь не авторизован, открытие главного окна');
+// Создание окна буфера обмена
+function createClipboardWindow() {
+    console.log("Create clipboard window");
+    const token = isAuthenticated().token; // Используем существующий токен
+    if (!token) {
+        console.log('Токен отсутствует, открытие главного окна');
         new Notification({
             title: 'ClipboardSync',
             body: 'Пожалуйста, авторизуйтесь для доступа к буферу обмена'
@@ -130,10 +136,6 @@ async function createClipboardWindow() {
         }
         return;
     }
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-    lastActiveWindowId = await getActiveWindowId();
-    console.log('Последнее активное окно ID:', lastActiveWindowId);
 
     if (clipboardWindow) {
         clipboardWindow.show();
@@ -152,7 +154,8 @@ async function createClipboardWindow() {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
-        }
+        },
+        backgroundColor: '#00000000'
     });
     clipboardWindow.loadFile('renderer/clipboard.html');
 
@@ -168,18 +171,30 @@ async function createClipboardWindow() {
     });
 
     clipboardWindow.webContents.on('did-finish-load', () => {
-        updateClipboardContent();
+        updateClipboardContent(token);
         clipboardWindow.focus();
     });
 }
 
-function updateClipboardContent() {
+// Обновление содержимого буфера обмена
+function updateClipboardContent(token) {
     if (clipboardWindow) {
         const text = clipboard.readText();
-        clipboardWindow.webContents.send('update-clipboard', text);
+        const userData = isAuthenticated();
+        if (text && userData && userData.token) {
+            const history = readClipboardHistory();
+            const existingIndex = history.findIndex(item => item.text === text);
+            if (existingIndex === -1) {
+                sendToServer(userData.token, text);
+            }
+            saveClipboardHistory(text);
+        }
+        const history = readClipboardHistory();
+        clipboardWindow.webContents.send('update-clipboard', { current: text, history });
     }
 }
 
+// Создание трея
 function createTray() {
     tray = new Tray(path.join(__dirname, 'renderer', 'icon.png'));
     const contextMenu = Menu.buildFromTemplate([
@@ -197,6 +212,7 @@ function createTray() {
     });
 }
 
+// Одиночный экземпляр
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
     console.log('Приложение уже запущено, выход');
@@ -216,6 +232,10 @@ if (!gotTheLock) {
         if (process.argv.includes('--show-clipboard')) {
             createClipboardWindow();
         }
+
+        setInterval(() => {
+            updateClipboardContent(isAuthenticated().token);
+        }, 1000);
     });
 }
 
@@ -231,13 +251,34 @@ app.on('activate', () => {
     }
 });
 
-ipcMain.on('paste-clipboard', async (event, text) => {
+ipcMain.on('paste-clipboard', (event, text) => {
     console.log('Получена команда вставки:', text);
-    clipboard.writeText(text);
+    saveClipboardHistory(text);
     if (clipboardWindow) {
         clipboardWindow.close();
     }
-    if (lastActiveWindowId) {
-        await pasteText(lastActiveWindowId, text);
+});
+
+ipcMain.on('clear-clipboard-history', () => {
+    clearClipboardHistory();
+});
+
+ipcMain.on('request-clipboard-update', (event) => {
+    if (clipboardWindow) {
+        updateClipboardContent(isAuthenticated().token);
+    }
+});
+
+ipcMain.on('minimize-to-tray', () => {
+    if (mainWindow) {
+        mainWindow.minimize();
+        mainWindow.hide();
+    }
+});
+
+ipcMain.on('focus-main-window', () => {
+    if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
     }
 });

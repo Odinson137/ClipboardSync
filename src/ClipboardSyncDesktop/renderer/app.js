@@ -1,9 +1,9 @@
 const { ipcRenderer } = require('electron');
 const store = require('./storage');
 const { connectSignalR, sendDevice, copyToClipboard } = require('./signalr');
-const { register, login } = require('./api');
+const { register, login, autoLogin } = require('./api');
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Отладка кнопок
     const buttons = [
         'registerButton', 'loginButton', 'sendDeviceButton', 'copyButton'
@@ -63,4 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.on('close-clipboard-window', () => {
         ipcRenderer.send('focus-main-window');
     });
+
+    // Ожидание загрузки данных перед автоавторизацией
+    try {
+        await new Promise(resolve => {
+            const checkLoaded = setInterval(() => {
+                if (store.isLoaded) {
+                    clearInterval(checkLoaded);
+                    resolve();
+                }
+            }, 100); // Проверяем каждые 100мс
+        });
+        autoLogin(store, connectSignalR).catch(err => {
+            console.error('Ошибка автоавторизации:', err);
+        });
+    } catch (err) {
+        console.error('Ошибка ожидания загрузки store:', err);
+    }
 });

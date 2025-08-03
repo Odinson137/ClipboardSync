@@ -4,10 +4,10 @@ const os = require('os');
 
 class Storage {
     constructor() {
-        // Путь к файлу хранения: ~/.config/ClipboardSync/storage.json
         this.storagePath = path.join(os.homedir(), '.config', 'ClipboardSync', 'storage.json');
         this.data = {};
-        this.load();
+        this.isLoaded = false; // Флаг, показывающий, загружены ли данные
+        this.load(); // Запускаем загрузку
     }
 
     async load() {
@@ -16,9 +16,11 @@ class Storage {
             const data = await fs.readFile(this.storagePath, 'utf-8');
             this.data = JSON.parse(data);
             console.log('Storage загружен:', this.data);
+            this.isLoaded = true; // Устанавливаем флаг после успешной загрузки
         } catch (error) {
             console.warn('Ошибка загрузки storage, создаём пустой объект:', error.message);
             this.data = {};
+            this.isLoaded = true; // Даже при ошибке считаем загрузку завершенной
         }
     }
 
@@ -32,13 +34,17 @@ class Storage {
         }
     }
 
-    set(key, value) {
+    async set(key, value) {
         this.data[key] = value;
         console.log(`Storage: установлено ${key} = ${value}`);
-        this.save();
+        await this.save();
     }
 
-    get(key, defaultValue = null) {
+    async get(key, defaultValue = null) {
+        // Ждём, пока данные загрузятся, если ещё не загружены
+        while (!this.isLoaded) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Пауза 100мс
+        }
         const value = this.data[key] ?? defaultValue;
         console.log(`Storage: получено ${key} = ${value}`);
         return value;
