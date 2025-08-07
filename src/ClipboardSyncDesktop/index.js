@@ -58,7 +58,13 @@ function saveClipboardHistory(text) {
         }
         fs.writeFileSync(historyPath, JSON.stringify(history.slice(0, 100), null, 2));
         console.log('История сохранена:', text);
-        clipboard.writeText(text); // Обновляем буфер, чтобы сохранить текущее состояние
+        clipboard.writeText(text);
+
+        // Отправка на сервер через SignalR
+        const userData = isAuthenticated();
+        if (userData && userData.token && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('save-clipboard-via-signalr', { text, userId: userData.userId, token: userData.token });
+        }
     } catch (error) {
         console.error('Ошибка сохранения истории:', error.message);
     }
@@ -77,7 +83,7 @@ function clearClipboardHistory() {
     }
 }
 
-// Отправка текста на сервер
+// Отправка текста на сервер (через HTTP, оставляем для совместимости)
 async function sendToServer(token, text) {
     try {
         const response = await axios.post(`${serverUrl}/api/clipboard`, {
@@ -86,9 +92,9 @@ async function sendToServer(token, text) {
         }, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('Текст отправлен на сервер:', response.data);
+        console.log('Текст отправлен на сервер (HTTP):', response.data);
     } catch (error) {
-        console.error('Ошибка отправки на сервер:', error.message);
+        console.error('Ошибка отправки на сервер (HTTP):', error.message);
     }
 }
 

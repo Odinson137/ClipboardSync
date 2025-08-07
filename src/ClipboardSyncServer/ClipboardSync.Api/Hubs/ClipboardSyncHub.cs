@@ -32,7 +32,7 @@ public class ClipboardSyncHub : Hub
     {
         var userId = Guid.Parse(Context.UserIdentifier); // Получаем userId из токена
         _logger.LogInformation($"Registering device {deviceName} for user {userId}");
-        
+
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
         {
@@ -65,7 +65,8 @@ public class ClipboardSyncHub : Hub
         };
         await _clipboardRepository.CreateAsync(clipboard);
 
-        await Clients.Group(userId.ToString()).SendAsync("ReceiveClipboard", clipboard.Id, content, type);
+        await Clients.GroupExcept(userId.ToString(), Context.ConnectionId)
+            .SendAsync("ReceiveClipboard", clipboard.Id, content, type);
     }
 
     public async Task SendCommand(Guid applicationId, CommandType type)

@@ -3,17 +3,32 @@ const { clipboard, ipcRenderer } = require('electron');
 
 let connection;
 
-function showError(message) {
+function updateStatus(message, isError = false) {
+    const statusElement = document.getElementById('connection-status');
     const errorElement = document.getElementById('error');
+
+    if (statusElement) {
+        statusElement.innerText = message;
+        statusElement.style.color = isError ? '#d32f2f' : '#2e7d32';
+    }
+
     if (errorElement) {
         errorElement.innerText = message;
-    } else {
-        console.error('Ошибка: элемент error не найден:', message);
     }
+
+    console.log(`[SignalR Status] ${message}`);
 }
 
 function connectSignalR(userId, token) {
     const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10;
+
+    // Уничтожаем старое подключение, если есть
+    if (connection) {
+        connection.stop();
+    }
+
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`${serverUrl}/hub/clipboardsync`, {
             accessTokenFactory: () => token,
@@ -21,35 +36,71 @@ function connectSignalR(userId, token) {
             transport: signalR.HttpTransportType.WebSockets,
         })
         .configureLogging(signalR.LogLevel.Information)
-        .withAutomaticReconnect()
+        .withAutomaticReconnect({
+            nextRetryDelayInMilliseconds: (retryContext) => {
+                if (retryContext.previousRetryCount >= maxReconnectAttempts) {
+                    updateStatus('Превышено количество попыток переподключения', true);
+                    return null; // Остановить переподключение
+                }
+
+                const delay = Math.min(1000 * (2 ** retryContext.previousRetryCount), 10000); // Экспоненциальная задержка
+                reconnectAttempts = retryContext.previousRetryCount + 1;
+                updateStatus(`Переподключение... Попытка ${reconnectAttempts}`);
+                return delay;
+            }
+        })
         .build();
 
+    // События с обновлением статуса
     connection.on('DeviceConnected', (deviceId) => {
-        document.getElementById('device-id').innerText = deviceId;
-        document.getElementById('connection-status').innerText = 'Подключено';
+        document.getElementById('device-id').innerText = deviceId || 'Unknown';
+        updateStatus('Подключено');
     });
 
     connection.on('DeviceDisconnected', (deviceId) => {
-        document.getElementById('connection-status').innerText = 'Отключено';
+        updateStatus('Отключено от устройства');
     });
 
     connection.on('ReceiveClipboard', (content, type) => {
-        if (type === 'text') {
+        if (type === 'text' && content) {
             clipboard.writeText(content);
-            showError('Получен контент буфера обмена: ' + content);
-            ipcRenderer.send('update-clipboard', content); // Обновляем окно буфера
+            updateStatus('Получен контент из буфера обмена');
+            ipcRenderer.send('update-clipboard', content);
         }
     });
 
-    connection.onclose(() => {
-        document.getElementById('connection-status').innerText = 'Отключено';
+    // События состояния подключения
+    connection.onclose((error) => {
+        if (error) {
+            updateStatus('Соединение закрыто. Попытка переподключения...', true);
+        } else {
+            updateStatus('Отключено');
+        }
     });
 
-    connection.start()
-        .then(() => {
-            document.getElementById('connection-status').innerText = 'Подключено';
-        })
-        .catch((err) => showError('Ошибка подключения SignalR: ' + err.message));
+    connection.onreconnecting(() => {
+        updateStatus('Соединение потеряно. Переподключение...', true);
+    });
+
+    connection.onreconnected(() => {
+        updateStatus('Переподключено');
+        reconnectAttempts = 0;
+    });
+
+    // Запуск подключения с повторными попытками
+    async function start() {
+        try {
+            await connection.start();
+            updateStatus('Подключено');
+            reconnectAttempts = 0;
+        } catch (err) {
+            updateStatus(`Ошибка подключения. Повторная попытка...`, true);
+            setTimeout(start, 3000); // Повтор каждые 3 секунды, если withAutomaticReconnect не сработал
+        }
+    }
+
+    // Запускаем
+    start();
 
     return connection;
 }
@@ -58,25 +109,40 @@ async function sendDevice(userId) {
     const deviceName = 'ElectronClient-' + Math.random().toString(36).substring(7);
     try {
         await connection.invoke('RegisterDevice', userId, deviceName);
-        showError('Устройство успешно отправлено');
+        updateStatus('Устройство зарегистрировано: ' + deviceName);
     } catch (error) {
-        showError('Ошибка отправки устройства: ' + error.message);
+        updateStatus('Ошибка регистрации устройства: ' + error.message, true);
     }
 }
 
 async function copyToClipboard(userId, text) {
-    if (!text) {
-        showError('Введите текст для копирования');
+    if (!text || text.trim() === '') {
+        updateStatus('Введите текст для копирования', true);
         return;
     }
+
     try {
         clipboard.writeText(text);
-        await connection.invoke('SendClipboard', userId, text, 0);
-        showError('Текст скопирован в буфер обмена и отправлен на сервер');
-        ipcRenderer.send('update-clipboard', text); // Обновляем окно буфера
+        await connection.invoke('SendClipboard', text, 0); // Исправлено: userId вместо text
+        updateStatus('Текст отправлен в облако');
+        ipcRenderer.send('update-clipboard', text);
     } catch (error) {
-        showError('Ошибка копирования или отправки: ' + error.message);
+        updateStatus('Ошибка отправки: ' + error.message, true);
     }
 }
 
-module.exports = { connectSignalR, sendDevice, copyToClipboard };
+// Обработчик для отправки через SignalR
+ipcRenderer.on('save-clipboard-via-signalr', async (event, { text, userId, token }) => {
+    if (connection && connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            await copyToClipboard(userId, text); // Вызов метода для отправки через SignalR
+            console.log('Текст отправлен на сервер через SignalR:', text);
+        } catch (error) {
+            console.error('Ошибка отправки через SignalR:', error.message);
+        }
+    } else {
+        console.warn('Нет активного подключения SignalR для отправки:', text);
+    }
+});
+
+module.exports = { connectSignalR, sendDevice, copyToClipboard, updateStatus };
