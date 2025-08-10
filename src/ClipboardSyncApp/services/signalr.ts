@@ -1,6 +1,7 @@
 import { HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr';
 import { SERVER_URL } from './api';
 import * as Clipboard from '@react-native-clipboard/clipboard';
+import {Int32} from "react-native/Libraries/Types/CodegenTypes";
 
 class SignalRService {
     private connection: any = null;
@@ -25,9 +26,9 @@ class SignalRService {
             .configureLogging(LogLevel.Information)
             .build();
 
-        this.connection.on('ReceiveClipboard', (_id: string, content: string, type: string) => {
-            if (type === 'Text' || type === 'text') {
-                Clipboard.setString(content);
+        this.connection.on('ReceiveClipboard', (_id: string, content: string, type: Int32) => {
+            if (type === 0) {
+                Clipboard.default.setString(content);
                 console.log('[SignalR] Clipboard updated from server:', content);
             }
         });

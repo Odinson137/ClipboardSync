@@ -4,7 +4,7 @@ const os = require('os');
 const storage = require('./storage');
 
 let connection;
-
+let lastValue = null;
 function updateStatus(message, isError = false) {
     const statusElement = document.getElementById('connection-status');
     const errorElement = document.getElementById('error');
@@ -69,8 +69,9 @@ async function connectSignalR(userId, token) {
         updateStatus('Отключено от устройства');
     });
 
-    connection.on('ReceiveClipboard', (content, type) => {
-        if (type === 'text' && content) {
+    connection.on('ReceiveClipboard', (id, content, type) => {
+        if (type === 0 && content) {
+            lastValue = content;
             clipboard.writeText(content);
             updateStatus('Получен контент из буфера обмена');
             ipcRenderer.send('update-clipboard', content);
@@ -137,10 +138,13 @@ async function copyToClipboard(userId, text) {
     } catch (error) {
         updateStatus('Ошибка отправки: ' + error.message, true);
     }
+    lastValue = null;
 }
 
 // Обработчик для отправки через SignalR
 ipcRenderer.on('save-clipboard-via-signalr', async (event, { text, userId, token }) => {
+    if (lastValue === text) return;
+    
     if (connection && connection.state === signalR.HubConnectionState.Connected) {
         try {
             await copyToClipboard(userId, text); // Вызов метода для отправки через SignalR

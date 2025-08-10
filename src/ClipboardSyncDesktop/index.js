@@ -200,7 +200,6 @@ function monitorClipboard() {
             const userData = isAuthenticated();
             if (userData && userData.token) {
                 saveClipboardHistory(currentText);
-                sendToServer(userData.token, currentText);
             }
             if (clipboardWindow) {
                 updateClipboardContent(userData.token);
