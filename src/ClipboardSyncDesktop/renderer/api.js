@@ -47,7 +47,7 @@ async function login(username, password, store, connectSignalR) {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('main-section').style.display = 'block';
         document.getElementById('user-name').innerText = username;
-        connectSignalR(userId, token);
+        await connectSignalR(userId, token);
         return true;
     } catch (error) {
         showError('Ошибка входа: ' + (error.response?.data || error.message));

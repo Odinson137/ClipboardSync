@@ -1,5 +1,7 @@
 const signalR = require('@microsoft/signalr');
 const { clipboard, ipcRenderer } = require('electron');
+const os = require('os');
+const storage = require('./storage');
 
 let connection;
 
@@ -19,7 +21,7 @@ function updateStatus(message, isError = false) {
     console.log(`[SignalR Status] ${message}`);
 }
 
-function connectSignalR(userId, token) {
+async function connectSignalR(userId, token) {
     const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 10;
@@ -29,8 +31,14 @@ function connectSignalR(userId, token) {
         connection.stop();
     }
 
+    let id = "12345"
+    console.log(`[SignalR Connection ID] ${id}`);
+
+    const deviceId = await storage.getOrCreateDeviceId();
+    const deviceName = os.hostname() || 'UnknownDevice';
+    
     connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${serverUrl}/hub/clipboardsync`, {
+        .withUrl(`${serverUrl}/hub/clipboardsync?deviceName=${deviceName}&applicationType=1&deviceIdentifier=${deviceId}`, {
             accessTokenFactory: () => token,
             skipNegotiation: true,
             transport: signalR.HttpTransportType.WebSockets,

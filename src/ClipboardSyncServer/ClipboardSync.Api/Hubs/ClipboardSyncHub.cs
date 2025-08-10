@@ -28,28 +28,62 @@ public class ClipboardSyncHub : Hub
         _logger = logger;
     }
 
-    public async Task RegisterDevice(string deviceName)
+    public override async Task OnConnectedAsync()
     {
-        var userId = Guid.Parse(Context.UserIdentifier); // Получаем userId из токена
-        _logger.LogInformation($"Registering device {deviceName} for user {userId}");
+        var userId = Guid.Parse(Context.UserIdentifier!);
+        var httpRequest = Context.GetHttpContext()?.Request;
+        var deviceName = httpRequest?.Query["deviceName"].ToString();
+        var deviceTypeStr = httpRequest?.Query["applicationType"].ToString();
+        var deviceIdentifier = httpRequest?.Query["deviceIdentifier"].ToString();
 
-        var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null)
+        _logger.LogInformation($"Device connected: {deviceName} ({deviceIdentifier}) by user {userId}");
+
+        if (string.IsNullOrWhiteSpace(deviceName) || string.IsNullOrWhiteSpace(deviceTypeStr) ||
+            string.IsNullOrWhiteSpace(deviceIdentifier))
         {
-            throw new HubException("User not found.");
+            throw new HubException("Missing connection parameters.");
         }
 
-        var application = new Application
+        if (!Enum.TryParse<ApplicationType>(deviceTypeStr, true, out var applicationType))
         {
-            UserId = userId,
-            Name = deviceName,
-            ConnectionState = ConnectionState.Active,
-            CreatedAt = DateTime.UtcNow
-        };
-        await _applicationRepository.CreateAsync(application);
+            throw new HubException("Invalid application type.");
+        }
+
+        // Проверяем наличие устройства по UserId и DeviceIdentifier
+        var existingApplication =
+            await _applicationRepository.GetByUserIdAndDeviceIdentifierAsync(userId, deviceIdentifier);
+
+        Guid applicationId;
+
+        if (existingApplication != null)
+        {
+            existingApplication.ConnectionState = ConnectionState.Active;
+            existingApplication.Name = deviceName; // Можно обновлять имя, если нужно
+            existingApplication.ApplicationType = applicationType;
+            await _applicationRepository.UpdateAsync(existingApplication);
+            applicationId = existingApplication.Id;
+        }
+        else
+        {
+            var application = new Application
+            {
+                UserId = userId,
+                Name = deviceName,
+                ConnectionState = ConnectionState.Active,
+                ApplicationType = applicationType,
+                DeviceIdentifier = deviceIdentifier,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _applicationRepository.CreateAsync(application);
+            applicationId = application.Id;
+        }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, userId.ToString());
-        await Clients.Group(userId.ToString()).SendAsync("DeviceConnected", application.Id, deviceName);
+
+        await Clients.Group(userId.ToString()).SendAsync("DeviceConnected", applicationId, deviceName);
+
+        await base.OnConnectedAsync();
     }
 
     public async Task SendClipboard(string content, ClipboardType type)
@@ -88,8 +122,23 @@ public class ClipboardSyncHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        _logger.LogInformation($"Disconnected from user {Context.ConnectionId}", exception?.Message);
-        await Clients.Group(Context.UserIdentifier ?? "").SendAsync("DeviceDisconnected", Context.ConnectionId);
+        var userId = Guid.Parse(Context.UserIdentifier!);
+        var deviceIdentifier = Context.GetHttpContext()?.Request.Query["deviceIdentifier"].ToString();
+
+        _logger.LogInformation($"Disconnected device {deviceIdentifier} from user {userId}. ConnectionId: {Context.ConnectionId}");
+
+        if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+        {
+            var application = await _applicationRepository.GetByUserIdAndDeviceIdentifierAsync(userId, deviceIdentifier);
+            if (application != null)
+            {
+                application.ConnectionState = ConnectionState.Disconnected;
+                await _applicationRepository.UpdateAsync(application);
+            }
+        }
+
+        await Clients.Group(userId.ToString()).SendAsync("DeviceDisconnected", deviceIdentifier);
+
         await base.OnDisconnectedAsync(exception);
     }
 }

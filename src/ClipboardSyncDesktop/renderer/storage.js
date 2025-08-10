@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const { randomUUID } = require('crypto');
 
 class Storage {
     constructor() {
@@ -48,6 +49,24 @@ class Storage {
         const value = this.data[key] ?? defaultValue;
         console.log(`Storage: получено ${key} = ${value}`);
         return value;
+    }
+
+    async getOrCreateDeviceId() {
+        // Ждём загрузку данных
+        while (!this.isLoaded) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        let deviceId = this.data.deviceId;
+        if (!deviceId) {
+            deviceId = randomUUID(); // генерируем уникальный ID
+            this.data.deviceId = deviceId;
+            await this.save();
+            console.log('Создан и сохранён новый deviceId:', deviceId);
+        } else {
+            console.log('Используем существующий deviceId:', deviceId);
+        }
+        return deviceId;
     }
 }
 

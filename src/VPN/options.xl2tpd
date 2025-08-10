@@ -1,0 +1,15 @@
+ipcp-accept-local
+ipcp-accept-remote
+refuse-eap
+require-mschap-v2
+noccp
+auth
+mtu 1280
+mru 1280
+nodefaultroute
+debug
+lock
+proxyarp
+connect-delay 5000
+name y.bury
+password 5BNu#6vjA1wE

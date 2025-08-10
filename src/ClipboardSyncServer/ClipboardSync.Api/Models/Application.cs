@@ -11,4 +11,6 @@ public class Application : BaseModel
     public ConnectionState ConnectionState { get; set; }
     
     public ApplicationType ApplicationType { get; set; }
+    
+    public string DeviceIdentifier { get; set; } = string.Empty;
 }
