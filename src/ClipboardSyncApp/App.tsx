@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, Alert, StyleSheet, InteractionManager, Platform, Linking } from 'react-native';
+import {
+    View,
+    Text,
+    Button,
+    Alert,
+    StyleSheet,
+    InteractionManager,
+    Platform,
+    Linking,
+    NativeModules
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Clipboard from '@react-native-clipboard/clipboard';
 import AuthScreen from './screens/AuthScreen';
 import { signalRService } from './services/signalr';
 import { getOrCreateDeviceId, getDeviceName } from './utils/deviceId';
 import { startClipboardService, stopClipboardService } from './services/backgroundClipboard';
+const { KeepAliveModule } = NativeModules;
 
 // Function to request battery optimization exemption
 const requestBatteryOptimizationExemption = async () => {
