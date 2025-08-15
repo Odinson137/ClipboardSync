@@ -1,9 +1,9 @@
 package com.clipboardsyncapp
 
 import android.app.Application
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.Notification // Add this import for VISIBILITY_PUBLIC
 import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -21,15 +21,12 @@ class MainApplication : Application(), ReactApplication {
             override fun getPackages(): List<ReactPackage> {
                 val packages = PackageList(this).packages
                 return packages.toMutableList().apply {
-                    // Optionally add NotificationChannelPackage if needed
-                    // add(NotificationChannelPackage())
+                    add(AccessibilityPackage())
                 }
             }
 
             override fun getJSMainModuleName(): String = "index"
-
             override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
-
             override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
             override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
         }
@@ -55,7 +52,7 @@ class MainApplication : Application(), ReactApplication {
             ).apply {
                 description = channelDescription
                 enableVibration(true)
-                setLockscreenVisibility(Notification.VISIBILITY_PUBLIC) // Fixed to use Notification.VISIBILITY_PUBLIC
+                setLockscreenVisibility(Notification.VISIBILITY_PUBLIC)
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
