@@ -5,7 +5,7 @@
       context: .
       dockerfile: ClipboardSync.Api/Dockerfile
     ports:
-      - 8099:8080
+      - 8080:8080
     networks:
       - clipboardsync-network
       
@@ -13,7 +13,7 @@
     container_name: clipboardsync-redis
     image: redis:latest
     ports:
-      - "6399:6379"
+      - "6379:6379"
     networks:
       - clipboardsync-network
       
