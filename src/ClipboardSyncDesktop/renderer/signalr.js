@@ -2,6 +2,7 @@ const signalR = require('@microsoft/signalr');
 const { clipboard, ipcRenderer } = require('electron');
 const os = require('os');
 const storage = require('./storage');
+const { serverUrl } = require('./config');
 
 let connection;
 let lastValue = null;
@@ -22,7 +23,6 @@ function updateStatus(message, isError = false) {
 }
 
 async function connectSignalR(userId, token) {
-    const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 10;
 

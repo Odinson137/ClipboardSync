@@ -1,5 +1,5 @@
 import { HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr';
-import { SERVER_URL } from './api';
+import SERVER_URL from '../config';
 import * as Clipboard from '@react-native-clipboard/clipboard';
 import { Buffer } from 'buffer';
 import AesGcmCrypto from 'react-native-aes-gcm-crypto';

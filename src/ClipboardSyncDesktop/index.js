@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const axios = require('axios');
+const { serverUrl } = require('./renderer/config');
 
 let mainWindow = null;
 let tray = null;
@@ -13,9 +14,6 @@ app.disableHardwareAcceleration();
 // Путь к файлам хранения
 const storagePath = path.join(os.homedir(), '.config', 'ClipboardSync', 'storage.json');
 const historyPath = path.join(os.homedir(), '.config', 'ClipboardSync', 'clipboard_history.json');
-
-// URL сервера
-const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
 
 // Проверка авторизации
 function isAuthenticated() {

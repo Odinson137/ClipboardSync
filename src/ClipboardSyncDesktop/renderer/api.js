@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { serverUrl } = require('./config');
 
 function showError(message) {
     const errorElement = document.getElementById('error');
@@ -10,7 +11,6 @@ function showError(message) {
 }
 
 async function register(username, password) {
-    const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
     if (!username || !password) {
         showError('Требуются имя пользователя и пароль');
         return false;
@@ -30,7 +30,7 @@ async function register(username, password) {
 }
 
 async function login(username, password, store, connectSignalR) {
-    const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
+    //const serverUrl = 'https://probable-dogfish-known.ngrok-free.app';
     if (!username || !password) {
         showError('Требуются имя пользователя и пароль');
         return false;

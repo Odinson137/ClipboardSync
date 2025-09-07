@@ -20,6 +20,7 @@
     "@microsoft/signalr": "^8.0.7",
     "axios": "^1.10.0",
     "dbus-native": "^0.4.0",
+    "dotenv": "^17.2.2",
     "electron": "^37.2.2",
     "electron-store": "^8.1.0",
     "node-machine-id": "^1.1.12",

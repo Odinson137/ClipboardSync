@@ -16,9 +16,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Clipboard from '@react-native-clipboard/clipboard';
 import StartForegroundService from './StartForegroundService';
 import { NativeModules } from 'react-native';
+import SERVER_URL from './config';
 
 const { NativeBridgeModule } = NativeModules;
-const SERVER_URL = 'https://probable-dogfish-known.ngrok-free.app';
+// const SERVER_URL = 'https://probable-dogfish-known.ngrok-free.app';
+// const SERVER_URL = 'http://193.47.42.81:8099';
 const FETCH_TIMEOUT = 5000;
 
 const getDeviceIdForService = async () => "212";
@@ -130,7 +132,7 @@ const App = () => {
     const handleLogin = async () => {
         try {
             setLoginStatusMessage('⌛ Please wait...');
-            const response = await fetchTimeout(`${SERVER_URL}/api/user/login`, {
+            const response = await fetchTimeout(`${URL}/api/user/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userName, password }),
